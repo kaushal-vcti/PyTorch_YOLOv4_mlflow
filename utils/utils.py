@@ -14,7 +14,8 @@ import torch
 import torch.nn as nn
 import torchvision
 from tqdm import tqdm
-
+import mlflow
+import mlflow.pytorch as mp
 from . import torch_utils  # , google_utils
 
 # Set printoptions
@@ -1002,3 +1003,27 @@ def plot_results(start=0, stop=0, bucket='', id=()):  # from utils.utils import 
     fig.tight_layout()
     ax[1].legend()
     fig.savefig('results.png', dpi=200)
+
+def create_experiment(experiment_name,run_name, model, run_metrics, save_dir=None, artifacts=[], run_params=None):
+    import mlflow
+    #mlflow.set_tracking_uri("http://localhost:5000") #uncomment this line if you want to use any database like sqlite as backend storage for model
+    mlflow.end_run()
+    mlflow.set_experiment(experiment_name)
+    
+    with mlflow.start_run():
+        
+        if not run_params == None:
+            for param in run_params:
+                mlflow.log_param(param, run_params[param])
+            
+        for metric in run_metrics:
+            mlflow.log_metric(metric, run_metrics[metric])
+        
+
+        if not save_dir == None:
+            for artifact in artifacts:
+              mlflow.log_artifact(os.path.join(save_dir, artifact), os.path.splitext(artifact)[0])  
+        mp.log_model(model, "models")
+        mlflow.set_tag("tag1", "yolov4")
+            
+    print('Run - %s is logged to Experiment - %s' %(run_name, experiment_name))
